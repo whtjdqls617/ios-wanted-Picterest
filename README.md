@@ -33,6 +33,85 @@
 
 <br>
 
+## ⚠️ Trouble Shooting
+
+### “이미지 각각의 height 구하기”
+
+- 문제점
+    - 고정된 width에 맞게 각 이미지의 비율이 유지되지 않음
+- 원인
+    - 변경된 width의 비율에 맞게 height의 값도 새로 계산해주지 않아서 원본의 height를 그대로 가져옴
+- 해결방안
+    - JSON에 포함되어있는 width값을 추가로 가져와서 원본 이미지의 비율을 계산한 뒤 height를 새로 구함
+    
+    ```swift
+    protocol CustomLayoutDelegate: AnyObject {
+        func collectionView(_ collectionView: UICollectionView, heightForImageAtIndexPath indexPath: IndexPath) -> CGFloat
+        func collectionView(_ collectionView: UICollectionView, widthForImageAtIndexPath indexPath: IndexPath) -> CGFloat
+    }
+    ```
+    
+    ```swift
+    let resizeHeight = imageHeight * contentWidth / 2 / imageWidth
+    let height = cellPadding * 2 + resizeHeight
+    ```
+    
+<br>
+
+### “이미지의 특정 부분 터치”
+
+- 문제점
+    - 별 버튼만 터치했을 때 반응이 없음
+- 원인
+    - Stack View 내부의 요소만 addGesture를 하면 적용이 되지 않음
+- 해결방안
+    - Stack View를 add한 Image View에 addGesture를 적용하면 해결된다.
+
+```swift
+let imageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.layer.cornerRadius = 15
+        imageView.layer.masksToBounds = true
+        let tap = UITapGestureRecognizer(target: nil, action: #selector(pressButton(_:)))
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(tap)
+        return imageView
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.saveButton.addTarget(self, action: #selector(pressButton), for: .touchUpInside)
+        setupView()
+        setupConstraints()
+    }
+```
+
+---
+
+## **🤔** 고민한 점
+
+### “동일한 함수가 사용되는 부분은 Protocol을 활용하여 추상화할 수 있지 않을까?”
+
+- 고민에 대한 노력
+    - FileManager, CoreData에서 사용하는 save, get, delete 등에 관한 함수는 중복이 되므로 Protocol로 묶어서 재사용하기 편하게 구현했다.
+    
+    ```swift
+    protocol FileManagerProtocol {
+        func saveImageToFilemanager(_ image : UIImage, _ name : String) -> String
+        func deleteImageFromFilemanager(_ name : String)
+        func getSavedPhotoListFromFilemanager()
+        func getSavedPhotoFromFilemanager(_ name : String) -> UIImage?
+    }
+    
+    protocol CoreDataProtocol {
+        func saveDataToCoreData(_ id : String, _ memo : String, _ url : String, _ path : String, _ width : Int32, _ height : Int32)
+        func getDataFromCoreData()
+        func deleteDataInCoreData(_ object : NSManagedObject)
+    }
+    ```
+
+<br>
+
 ## 🔀  Git Branch
 
 개별 브랜치 관리 및 병합의 안정성을 위해 `Git Forking WorkFlow`를 적용했습니다.
